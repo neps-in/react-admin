@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
-import { useLocation, useHistory } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+import { useNotificationContext } from '../notification';
+import { useBasename } from '../routing';
 import useAuthProvider, { defaultAuthParams } from './useAuthProvider';
-import { resetNotification } from '../actions/notificationActions';
+import { removeDoubleSlashes } from '../routing/useCreatePath';
 
 /**
  * Get a callback for calling the authProvider.login() method
@@ -32,32 +33,42 @@ const useLogin = (): Login => {
     const authProvider = useAuthProvider();
     const location = useLocation();
     const locationState = location.state as any;
-    const history = useHistory();
-    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const basename = useBasename();
+    const { resetNotifications } = useNotificationContext();
     const nextPathName = locationState && locationState.nextPathname;
     const nextSearch = locationState && locationState.nextSearch;
+    const afterLoginUrl = removeDoubleSlashes(
+        `${basename}/${defaultAuthParams.afterLoginUrl}`
+    );
 
     const login = useCallback(
         (params: any = {}, pathName) =>
             authProvider.login(params).then(ret => {
-                dispatch(resetNotification());
+                resetNotifications();
                 const redirectUrl = pathName
                     ? pathName
-                    : nextPathName + nextSearch ||
-                      defaultAuthParams.afterLoginUrl;
-                history.push(redirectUrl);
+                    : nextPathName + nextSearch || afterLoginUrl;
+                navigate(redirectUrl);
                 return ret;
             }),
-        [authProvider, history, nextPathName, nextSearch, dispatch]
+        [
+            authProvider,
+            navigate,
+            nextPathName,
+            nextSearch,
+            resetNotifications,
+            afterLoginUrl,
+        ]
     );
 
     const loginWithoutProvider = useCallback(
         (_, __) => {
-            dispatch(resetNotification());
-            history.push(defaultAuthParams.afterLoginUrl);
+            resetNotifications();
+            navigate(afterLoginUrl);
             return Promise.resolve();
         },
-        [history, dispatch]
+        [navigate, resetNotifications, afterLoginUrl]
     );
 
     return authProvider ? login : loginWithoutProvider;

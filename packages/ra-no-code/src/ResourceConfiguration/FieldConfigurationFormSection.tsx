@@ -1,7 +1,10 @@
 import * as React from 'react';
-import { getFieldLabelTranslationArgs, useTranslate } from 'ra-core';
-import { TextInput } from 'ra-ui-materialui';
-import { CardContent } from '@material-ui/core';
+import {
+    getFieldLabelTranslationArgs,
+    TextInput,
+    useTranslate,
+} from 'react-admin';
+import { CardContent } from '@mui/material';
 import { FieldTypeInput } from './FieldConfiguration/FieldTypeInput';
 import { FieldViewsInput } from './FieldConfiguration/FieldViewsInput';
 import { ConfigurationInputsFromFieldDefinition } from './ConfigurationInputsFromFieldDefinition';

@@ -1,26 +1,22 @@
 import * as React from 'react';
+import { styled } from '@mui/material/styles';
 import { memo, isValidElement, ReactElement } from 'react';
 import {
     IconButton,
     ListItem,
+    ListItemButton,
+    ListItemProps,
     ListItemText,
     ListItemSecondaryAction,
-} from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import CancelIcon from '@material-ui/icons/CancelOutlined';
-import { useTranslate, useListFilterContext } from 'ra-core';
-import { shallowEqual } from 'react-redux';
+} from '@mui/material';
+import CancelIcon from '@mui/icons-material/CancelOutlined';
+import { useTranslate, useListFilterContext, shallowEqual } from 'ra-core';
 import matches from 'lodash/matches';
 import pickBy from 'lodash/pickBy';
 
-const useStyles = makeStyles(theme => ({
-    listItem: {
-        paddingLeft: '2em',
-    },
-    listItemText: {
-        margin: 0,
-    },
-}));
+const arePropsEqual = (prevProps, nextProps) =>
+    prevProps.label === nextProps.label &&
+    shallowEqual(prevProps.value, nextProps.value);
 
 /**
  * Button to enable/disable a list filter.
@@ -35,8 +31,8 @@ const useStyles = makeStyles(theme => ({
  * @example
  *
  * import * as React from 'react';
- * import { Card, CardContent } from '@material-ui/core';
- * import MailIcon from '@material-ui/icons/MailOutline';
+ * import { Card, CardContent } from '@mui/material';
+ * import MailIcon from '@mui/icons-material/MailOutline';
  * import { FilterList, FilterListItem } from 'react-admin';
  *
  * const FilterSidebar = () => (
@@ -69,8 +65,8 @@ const useStyles = makeStyles(theme => ({
  *     startOfMonth,
  *     subMonths,
  * } from 'date-fns';
- * import { Card, CardContent } from '@material-ui/core';
- * import AccessTimeIcon from '@material-ui/icons/AccessTime';
+ * import { Card, CardContent } from '@mui/material';
+ * import AccessTimeIcon from '@mui/icons-material/AccessTime';
  * import { FilterList, FilterListItem } from 'react-admin';
  *
  * const FilterSidebar = () => (
@@ -144,14 +140,10 @@ const useStyles = makeStyles(theme => ({
  *     </Card>
  * );
  */
-const FilterListItem = (props: {
-    label: string | ReactElement;
-    value: any;
-}) => {
-    const { label, value } = props;
+export const FilterListItem = memo((props: FilterListItemProps) => {
+    const { label, value, ...rest } = props;
     const { filterValues, setFilters } = useListFilterContext();
     const translate = useTranslate();
-    const classes = useStyles(props);
 
     const isSelected = matches(
         pickBy(value, val => typeof val !== 'undefined')
@@ -177,34 +169,64 @@ const FilterListItem = (props: {
     const toggleFilter = () => (isSelected ? removeFilter() : addFilter());
 
     return (
-        <ListItem
-            button
+        <StyledListItem
             onClick={toggleFilter}
             selected={isSelected}
-            className={classes.listItem}
+            disablePadding
+            {...rest}
         >
-            <ListItemText
-                primary={
-                    isValidElement(label)
-                        ? label
-                        : translate(label, { _: label })
-                }
-                className={classes.listItemText}
-                data-selected={isSelected ? 'true' : 'false'}
-            />
-            {isSelected && (
-                <ListItemSecondaryAction>
-                    <IconButton size="small" onClick={toggleFilter}>
-                        <CancelIcon />
-                    </IconButton>
-                </ListItemSecondaryAction>
-            )}
-        </ListItem>
+            <ListItemButton
+                disableGutters
+                className={FilterListItemClasses.listItemButton}
+            >
+                <ListItemText
+                    primary={
+                        isValidElement(label)
+                            ? label
+                            : translate(label, { _: label })
+                    }
+                    className={FilterListItemClasses.listItemText}
+                    data-selected={isSelected ? 'true' : 'false'}
+                />
+                {isSelected && (
+                    <ListItemSecondaryAction>
+                        <IconButton
+                            size="small"
+                            onClick={event => {
+                                event.stopPropagation();
+                                toggleFilter();
+                            }}
+                        >
+                            <CancelIcon />
+                        </IconButton>
+                    </ListItemSecondaryAction>
+                )}
+            </ListItemButton>
+        </StyledListItem>
     );
+}, arePropsEqual);
+
+const PREFIX = 'RaFilterListItem';
+
+export const FilterListItemClasses = {
+    listItemButton: `${PREFIX}-listItemButton`,
+    listItemText: `${PREFIX}-listItemText`,
 };
 
-const arePropsEqual = (prevProps, nextProps) =>
-    prevProps.label === nextProps.label &&
-    shallowEqual(prevProps.value, nextProps.value);
+const StyledListItem = styled(ListItem, {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme }) => ({
+    [`& .${FilterListItemClasses.listItemButton}`]: {
+        paddingRight: '2em',
+        paddingLeft: '2em',
+    },
+    [`& .${FilterListItemClasses.listItemText}`]: {
+        margin: 0,
+    },
+}));
 
-export default memo(FilterListItem, arePropsEqual);
+export interface FilterListItemProps extends Omit<ListItemProps, 'value'> {
+    label: string | ReactElement;
+    value: any;
+}

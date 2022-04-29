@@ -34,11 +34,11 @@ export default {
             );
             return Promise.resolve();
         }
-        localStorage.setItem('not_authenticated', true);
-        return Promise.reject();
+        localStorage.setItem('not_authenticated', 'true');
+        return new Promise((resolve, reject) => setTimeout(reject, 1000));
     },
     logout: () => {
-        localStorage.setItem('not_authenticated', true);
+        localStorage.setItem('not_authenticated', 'true');
         localStorage.removeItem('role');
         localStorage.removeItem('login');
         localStorage.removeItem('user');
@@ -60,10 +60,10 @@ export default {
         return Promise.resolve(role);
     },
     getIdentity: () => {
-        return {
+        return Promise.resolve({
             id: localStorage.getItem('login'),
             fullName: localStorage.getItem('user'),
             avatar: localStorage.getItem('avatar'),
-        };
+        });
     },
 };

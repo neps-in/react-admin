@@ -1,20 +1,13 @@
 import merge from 'lodash/merge';
+import { RaRecord } from '../types';
 
 export default function getFormInitialValues(
-    initialValues,
-    defaultValue,
-    record
+    defaultValues: DefaultValue,
+    record: Partial<RaRecord>
 ) {
-    if (typeof defaultValue !== 'undefined') {
-        console.warn(
-            '"defaultValue" is deprecated, please use "initialValues" instead'
-        );
-    }
-
     const finalInitialValues = merge(
         {},
-        getValues(defaultValue, record),
-        getValues(initialValues, record),
+        getValues(defaultValues, record),
         record
     );
     return finalInitialValues;
@@ -31,3 +24,9 @@ function getValues(values, record) {
 
     return {};
 }
+
+interface DefaultValueObject {
+    [key: string]: any;
+}
+type DefaultValueFunction = (record: RaRecord) => DefaultValueObject;
+type DefaultValue = DefaultValueObject | DefaultValueFunction;

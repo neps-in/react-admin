@@ -1,11 +1,8 @@
 import * as React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import { useRecordContext } from 'react-admin';
+import { Box } from '@mui/material';
 
-const useStyles = makeStyles({
-    image: {
-        objectFit: 'contain',
-    },
-});
+import { Company, Contact } from '../types';
 
 const sizeInPixel = {
     medium: 42,
@@ -13,24 +10,21 @@ const sizeInPixel = {
 };
 
 export const LogoField = ({
-    record,
-    source,
     size = 'medium',
 }: {
-    record?: { logo: string; name: string };
-    source?: string;
     size?: 'small' | 'medium';
 }) => {
-    const classes = useStyles();
+    const record = useRecordContext<Company | Contact>();
     if (!record) return null;
     return (
-        <img
+        <Box
+            component="img"
             src={process.env.PUBLIC_URL + record.logo}
             alt={record.name}
             title={record.name}
             width={sizeInPixel[size]}
             height={sizeInPixel[size]}
-            className={classes.image}
+            sx={{ objectFit: 'contain' }}
         />
     );
 };

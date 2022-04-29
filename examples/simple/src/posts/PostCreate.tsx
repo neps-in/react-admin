@@ -1,14 +1,19 @@
 import * as React from 'react';
 import { useMemo } from 'react';
-import RichTextInput from 'ra-input-rich-text';
+import { RichTextInput } from 'ra-input-rich-text';
 import {
     ArrayInput,
     AutocompleteInput,
     BooleanInput,
     Create,
     DateInput,
+    FileField,
+    FileInput,
     FormDataConsumer,
+    maxValue,
+    minValue,
     NumberInput,
+    required,
     ReferenceInput,
     SaveButton,
     SelectInput,
@@ -16,40 +21,67 @@ import {
     SimpleFormIterator,
     TextInput,
     Toolbar,
-    required,
-    FileInput,
-    FileField,
-} from 'react-admin'; // eslint-disable-line import/no-unresolved
-import { FormSpy } from 'react-final-form';
+    useNotify,
+    usePermissions,
+    useRedirect,
+} from 'react-admin';
+import { useFormContext, useWatch } from 'react-hook-form';
 
-const PostCreateToolbar = props => (
-    <Toolbar {...props}>
-        <SaveButton
-            label="post.action.save_and_edit"
-            redirect="edit"
-            submitOnEnter={true}
-        />
-        <SaveButton
-            label="post.action.save_and_show"
-            redirect="show"
-            submitOnEnter={false}
-            variant="text"
-        />
-        <SaveButton
-            label="post.action.save_and_add"
-            redirect={false}
-            submitOnEnter={false}
-            variant="text"
-        />
-        <SaveButton
-            label="post.action.save_with_average_note"
-            transform={data => ({ ...data, average_note: 10 })}
-            redirect="show"
-            submitOnEnter={false}
-            variant="text"
-        />
-    </Toolbar>
-);
+const PostCreateToolbar = props => {
+    const notify = useNotify();
+    const redirect = useRedirect();
+    const { reset } = useFormContext();
+
+    return (
+        <Toolbar>
+            <SaveButton label="post.action.save_and_edit" variant="text" />
+            <SaveButton
+                label="post.action.save_and_show"
+                type="button"
+                variant="text"
+                mutationOptions={{
+                    onSuccess: data => {
+                        notify('ra.notification.created', {
+                            type: 'info',
+                            messageArgs: { smart_count: 1 },
+                        });
+                        redirect('show', 'posts', data.id);
+                    },
+                }}
+            />
+            <SaveButton
+                label="post.action.save_and_add"
+                type="button"
+                variant="text"
+                mutationOptions={{
+                    onSuccess: () => {
+                        reset();
+                        window.scrollTo(0, 0);
+                        notify('ra.notification.created', {
+                            type: 'info',
+                            messageArgs: { smart_count: 1 },
+                        });
+                    },
+                }}
+            />
+            <SaveButton
+                label="post.action.save_with_average_note"
+                type="button"
+                variant="text"
+                mutationOptions={{
+                    onSuccess: data => {
+                        notify('ra.notification.created', {
+                            type: 'info',
+                            messageArgs: { smart_count: 1 },
+                        });
+                        redirect('show', 'posts', data.id);
+                    },
+                }}
+                transform={data => ({ ...data, average_note: 10 })}
+            />
+        </Toolbar>
+    );
+};
 
 const backlinksDefaultValue = [
     {
@@ -57,35 +89,20 @@ const backlinksDefaultValue = [
         url: 'http://google.com',
     },
 ];
-const PostCreate = ({ permissions, ...props }) => {
-    const initialValues = useMemo(
+const PostCreate = () => {
+    const defaultValues = useMemo(
         () => ({
             average_note: 0,
         }),
         []
     );
-
+    const { permissions } = usePermissions();
     const dateDefaultValue = useMemo(() => new Date(), []);
-
     return (
-        <Create {...props}>
+        <Create redirect="edit">
             <SimpleForm
                 toolbar={<PostCreateToolbar />}
-                initialValues={initialValues}
-                validate={values => {
-                    const errors = {} as any;
-                    ['title', 'teaser'].forEach(field => {
-                        if (!values[field]) {
-                            errors[field] = 'Required field';
-                        }
-                    });
-
-                    if (values.average_note < 0 || values.average_note > 5) {
-                        errors.average_note = 'Should be between 0 and 5';
-                    }
-
-                    return errors;
-                }}
+                defaultValues={defaultValues}
             >
                 <FileInput
                     source="pdffile"
@@ -94,16 +111,27 @@ const PostCreate = ({ permissions, ...props }) => {
                 >
                     <FileField source="src" title="title" />
                 </FileInput>
-                <TextInput autoFocus source="title" />
-                <TextInput source="teaser" fullWidth={true} multiline={true} />
-                <RichTextInput source="body" validate={required()} />
-                <FormSpy subscription={{ values: true }}>
-                    {({ values }) =>
-                        values.title ? (
-                            <NumberInput source="average_note" />
-                        ) : null
-                    }
-                </FormSpy>
+                <TextInput
+                    autoFocus
+                    source="title"
+                    validate={required('Required field')}
+                />
+                <TextInput
+                    source="teaser"
+                    fullWidth
+                    multiline
+                    validate={required('Required field')}
+                />
+                <RichTextInput source="body" fullWidth validate={required()} />
+                <DependantInput dependency="title">
+                    <NumberInput
+                        source="average_note"
+                        validate={[
+                            minValue(0, 'Should be between 0 and 5'),
+                            maxValue(5, 'Should be between 0 and 5'),
+                        ]}
+                    />
+                </DependantInput>
 
                 <DateInput
                     source="published_at"
@@ -116,19 +144,15 @@ const PostCreate = ({ permissions, ...props }) => {
                     validate={[required()]}
                 >
                     <SimpleFormIterator>
-                        <DateInput source="date" />
-                        <TextInput source="url" />
+                        <DateInput source="date" defaultValue="" />
+                        <TextInput source="url" defaultValue="" />
                     </SimpleFormIterator>
                 </ArrayInput>
                 {permissions === 'admin' && (
                     <ArrayInput source="authors">
                         <SimpleFormIterator>
-                            <ReferenceInput
-                                label="User"
-                                source="user_id"
-                                reference="users"
-                            >
-                                <AutocompleteInput />
+                            <ReferenceInput source="user_id" reference="users">
+                                <AutocompleteInput label="User" />
                             </ReferenceInput>
                             <FormDataConsumer>
                                 {({
@@ -139,7 +163,6 @@ const PostCreate = ({ permissions, ...props }) => {
                                 }) =>
                                     scopedFormData && scopedFormData.user_id ? (
                                         <SelectInput
-                                            label="Role"
                                             source={getSource('role')}
                                             choices={[
                                                 {
@@ -156,6 +179,7 @@ const PostCreate = ({ permissions, ...props }) => {
                                                 },
                                             ]}
                                             {...rest}
+                                            label="Role"
                                         />
                                     ) : null
                                 }
@@ -169,3 +193,15 @@ const PostCreate = ({ permissions, ...props }) => {
 };
 
 export default PostCreate;
+
+const DependantInput = ({
+    dependency,
+    children,
+}: {
+    dependency: string;
+    children: JSX.Element;
+}) => {
+    const dependencyValue = useWatch({ name: dependency });
+
+    return dependencyValue ? children : null;
+};

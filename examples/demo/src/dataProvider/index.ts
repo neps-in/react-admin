@@ -15,9 +15,9 @@ export default (type: string) => {
     const dataProviderWithGeneratedData = new Proxy(defaultDataProvider, {
         get(_, name) {
             return (resource: string, params: any) => {
-                return dataProviderPromise.then(dataProvider =>
-                    dataProvider[name.toString()](resource, params)
-                );
+                return dataProviderPromise.then(dataProvider => {
+                    return dataProvider[name.toString()](resource, params);
+                });
             };
         },
     });
@@ -25,24 +25,25 @@ export default (type: string) => {
     return dataProviderWithGeneratedData;
 };
 
-const getDataProvider = (type: string): Promise<DataProvider> =>
-    fakeServerFactory(process.env.REACT_APP_DATA_PROVIDER || '').then(() => {
-        /**
-         * This demo can work with either a fake REST server, or a fake GraphQL server.
-         *
-         * To avoid bundling both libraries, the dataProvider and fake server factories
-         * use the import() function, so they are asynchronous.
-         */
-        if (type === 'graphql') {
-            return import('./graphql').then(factory => factory.default());
-        }
-        return import('./rest').then(provider => provider.default);
-    });
+const getDataProvider = async (type: string): Promise<DataProvider> => {
+    await fakeServerFactory(process.env.REACT_APP_DATA_PROVIDER || '');
+    /**
+     * This demo can work with either a fake REST server, or a fake GraphQL server.
+     *
+     * To avoid bundling both libraries, the dataProvider and fake server factories
+     * use the import() function, so they are asynchronous.
+     */
+    if (type === 'graphql') {
+        return import('./graphql').then(factory => factory.default());
+    }
+    return import('./rest').then(provider => provider.default);
+};
 
 const defaultDataProvider: DataProvider = {
     // @ts-ignore
     create: () => Promise.resolve({ data: { id: 0 } }),
-    delete: () => Promise.resolve({}),
+    // @ts-ignore
+    delete: () => Promise.resolve({ data: {} }),
     deleteMany: () => Promise.resolve({}),
     getList: () => Promise.resolve({ data: [], total: 0 }),
     getMany: () => Promise.resolve({ data: [] }),

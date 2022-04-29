@@ -1,17 +1,14 @@
 import * as React from 'react';
-import { FC } from 'react';
-import PropTypes from 'prop-types';
 import {
     NumberField,
     TextField,
     DateField,
     useTranslate,
     useGetList,
-    Record,
-    RecordMap,
-    Identifier,
+    RecordContextProvider,
     ReferenceField,
-    useLocale,
+    useLocaleState,
+    useRecordContext,
 } from 'react-admin';
 import {
     Typography,
@@ -23,175 +20,107 @@ import {
     Step,
     StepLabel,
     StepContent,
-} from '@material-ui/core';
+    Grid,
+} from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import AccessTimeIcon from '@material-ui/icons/AccessTime';
-import { makeStyles } from '@material-ui/core/styles';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 import order from '../orders';
 import review from '../reviews';
 import StarRatingField from '../reviews/StarRatingField';
-import { Order as OrderRecord, Review as ReviewRecord } from '../types';
+import {
+    Order as OrderRecord,
+    Review as ReviewRecord,
+    Customer,
+} from '../types';
 
-const useAsideStyles = makeStyles(theme => ({
-    root: {
-        width: 400,
-        [theme.breakpoints.down('md')]: {
-            display: 'none',
-        },
-    },
-}));
-
-interface AsideProps {
-    record?: Record;
-    basePath?: string;
-}
-
-const Aside: FC<AsideProps> = ({ record, basePath }) => {
-    const classes = useAsideStyles();
+const Aside = () => {
+    const record = useRecordContext<Customer>();
     return (
-        <div className={classes.root}>
-            {record && <EventList record={record} basePath={basePath} />}
-        </div>
+        <Box width={400} display={{ xs: 'none', lg: 'block' }}>
+            {record && <EventList />}
+        </Box>
     );
 };
 
-Aside.propTypes = {
-    record: PropTypes.any,
-    basePath: PropTypes.string,
-};
-
-interface EventListProps {
-    record?: Record;
-    basePath?: string;
-}
-
-const useEventStyles = makeStyles({
-    stepper: {
-        background: 'none',
-        border: 'none',
-        marginLeft: '0.3em',
-    },
-});
-
-const EventList: FC<EventListProps> = ({ record, basePath }) => {
+const EventList = () => {
+    const record = useRecordContext<Customer>();
     const translate = useTranslate();
-    const classes = useEventStyles();
-    const locale = useLocale();
-    const { data: orders, ids: orderIds } = useGetList<OrderRecord>(
-        'commands',
-        { page: 1, perPage: 100 },
-        { field: 'date', order: 'DESC' },
-        { customer_id: record && record.id }
-    );
-    const { data: reviews, ids: reviewIds } = useGetList<ReviewRecord>(
-        'reviews',
-        { page: 1, perPage: 100 },
-        { field: 'date', order: 'DESC' },
-        { customer_id: record && record.id }
-    );
-    const events = mixOrdersAndReviews(orders, orderIds, reviews, reviewIds);
+    const [locale] = useLocaleState();
+
+    const { data: orders } = useGetList<OrderRecord>('commands', {
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'date', order: 'DESC' },
+        filter: { customer_id: record.id },
+    });
+    const { data: reviews } = useGetList<ReviewRecord>('reviews', {
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'date', order: 'DESC' },
+        filter: { customer_id: record.id },
+    });
+    const events = mixOrdersAndReviews(orders, reviews);
 
     return (
-        <>
-            <Box m="0 0 1em 1em">
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            {translate(
-                                'resources.customers.fieldGroups.history'
-                            )}
-                        </Typography>
-                        <Box display="flex">
+        <Box ml={2}>
+            <Card>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                        {translate('resources.customers.fieldGroups.history')}
+                    </Typography>
+                    <Grid container rowSpacing={1} columnSpacing={1}>
+                        <Grid item xs={6} display="flex" gap={1}>
+                            <AccessTimeIcon fontSize="small" color="disabled" />
                             <Box flexGrow={1}>
-                                <Box display="flex" mb="1em">
-                                    <Box mr="1em">
-                                        <AccessTimeIcon
-                                            fontSize="small"
-                                            color="disabled"
-                                        />
-                                    </Box>
-                                    <Box flexGrow={1}>
-                                        <Typography>
-                                            {translate(
-                                                'resources.customers.fields.first_seen'
-                                            )}
-                                        </Typography>
-                                        <DateField
-                                            record={record}
-                                            source="first_seen"
-                                        />
-                                    </Box>
-                                </Box>
-                                {orderIds && orderIds.length > 0 && (
-                                    <Box display="flex">
-                                        <Box mr="1em">
-                                            <order.icon
-                                                fontSize="small"
-                                                color="disabled"
-                                            />
-                                        </Box>
-                                        <Box flexGrow={1}>
-                                            <Typography>
-                                                {translate(
-                                                    'resources.commands.amount',
-                                                    {
-                                                        smart_count:
-                                                            orderIds.length,
-                                                    }
-                                                )}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                )}
+                                <Typography variant="body2">
+                                    {translate(
+                                        'resources.customers.fields.first_seen'
+                                    )}
+                                </Typography>
+                                <DateField
+                                    record={record}
+                                    source="first_seen"
+                                />
                             </Box>
+                        </Grid>
+                        {orders && (
+                            <Grid item xs={6} display="flex" gap={1}>
+                                <order.icon fontSize="small" color="disabled" />
+                                <Typography variant="body2" flexGrow={1}>
+                                    {translate('resources.commands.amount', {
+                                        smart_count: orders.length,
+                                    })}
+                                </Typography>
+                            </Grid>
+                        )}
+                        <Grid item xs={6} display="flex" gap={1}>
+                            <AccessTimeIcon fontSize="small" color="disabled" />
                             <Box flexGrow={1}>
-                                <Box display="flex" mb="1em">
-                                    <Box mr="1em">
-                                        <AccessTimeIcon
-                                            fontSize="small"
-                                            color="disabled"
-                                        />
-                                    </Box>
-                                    <Box flexGrow={1}>
-                                        <Typography>
-                                            {translate(
-                                                'resources.customers.fields.last_seen'
-                                            )}
-                                        </Typography>
-                                        <DateField
-                                            record={record}
-                                            source="last_seen"
-                                        />
-                                    </Box>
-                                </Box>
-                                {reviewIds && reviewIds.length > 0 && (
-                                    <Box display="flex">
-                                        <Box mr="1em">
-                                            <review.icon
-                                                fontSize="small"
-                                                color="disabled"
-                                            />
-                                        </Box>
-                                        <Box flexGrow={1}>
-                                            <Typography>
-                                                {translate(
-                                                    'resources.reviews.amount',
-                                                    {
-                                                        smart_count:
-                                                            reviewIds.length,
-                                                    }
-                                                )}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                )}
+                                <Typography variant="body2">
+                                    {translate(
+                                        'resources.customers.fields.last_seen'
+                                    )}
+                                </Typography>
+                                <DateField record={record} source="last_seen" />
                             </Box>
-                        </Box>
-                    </CardContent>
-                </Card>
-            </Box>
-            <Stepper orientation="vertical" classes={{ root: classes.stepper }}>
+                        </Grid>
+                        {reviews && (
+                            <Grid item xs={6} display="flex" gap={1}>
+                                <review.icon
+                                    fontSize="small"
+                                    color="disabled"
+                                />
+                                <Typography variant="body2" flexGrow={1}>
+                                    {translate('resources.reviews.amount', {
+                                        smart_count: reviews.length,
+                                    })}
+                                </Typography>
+                            </Grid>
+                        )}
+                    </Grid>
+                </CardContent>
+            </Card>
+
+            <Stepper orientation="vertical" sx={{ mt: 1 }}>
                 {events.map(event => (
                     <Step
                         key={`${event.type}-${event.data.id}`}
@@ -200,19 +129,19 @@ const EventList: FC<EventListProps> = ({ record, basePath }) => {
                         completed
                     >
                         <StepLabel
-                            StepIconComponent={() => {
-                                const Component =
-                                    event.type === 'order'
-                                        ? order.icon
-                                        : review.icon;
-                                return (
-                                    <Component
-                                        fontSize="small"
+                            icon={
+                                event.type === 'order' ? (
+                                    <order.icon
                                         color="disabled"
-                                        style={{ paddingLeft: 3 }}
+                                        sx={{ pl: 0.5, fontSize: '1.25rem' }}
                                     />
-                                );
-                            }}
+                                ) : (
+                                    <review.icon
+                                        color="disabled"
+                                        sx={{ pl: 0.5, fontSize: '1.25rem' }}
+                                    />
+                                )
+                            }
                         >
                             {new Date(event.date).toLocaleString(locale, {
                                 weekday: 'long',
@@ -224,24 +153,18 @@ const EventList: FC<EventListProps> = ({ record, basePath }) => {
                             })}
                         </StepLabel>
                         <StepContent>
-                            {event.type === 'order' ? (
-                                <Order
-                                    record={event.data as OrderRecord}
-                                    key={`event_${event.data.id}`}
-                                    basePath={basePath}
-                                />
-                            ) : (
-                                <Review
-                                    record={event.data as ReviewRecord}
-                                    key={`review_${event.data.id}`}
-                                    basePath={basePath}
-                                />
-                            )}
+                            <RecordContextProvider value={event.data}>
+                                {event.type === 'order' ? (
+                                    <Order />
+                                ) : (
+                                    <Review />
+                                )}
+                            </RecordContextProvider>
                         </StepContent>
                     </Step>
                 ))}
             </Stepper>
-        </>
+        </Box>
     );
 };
 
@@ -252,27 +175,23 @@ interface AsideEvent {
 }
 
 const mixOrdersAndReviews = (
-    orders?: RecordMap<OrderRecord>,
-    orderIds?: Identifier[],
-    reviews?: RecordMap<ReviewRecord>,
-    reviewIds?: Identifier[]
+    orders?: OrderRecord[],
+    reviews?: ReviewRecord[]
 ): AsideEvent[] => {
-    const eventsFromOrders =
-        orderIds && orders
-            ? orderIds.map<AsideEvent>(id => ({
-                  type: 'order',
-                  date: orders[id].date,
-                  data: orders[id],
-              }))
-            : [];
-    const eventsFromReviews =
-        reviewIds && reviews
-            ? reviewIds.map<AsideEvent>(id => ({
-                  type: 'review',
-                  date: reviews[id].date,
-                  data: reviews[id],
-              }))
-            : [];
+    const eventsFromOrders = orders
+        ? orders.map<AsideEvent>(order => ({
+              type: 'order',
+              date: order.date,
+              data: order,
+          }))
+        : [];
+    const eventsFromReviews = reviews
+        ? reviews.map<AsideEvent>(review => ({
+              type: 'review',
+              date: review.date,
+              data: review,
+          }))
+        : [];
     const events = eventsFromOrders.concat(eventsFromReviews);
     events.sort(
         (e1, e2) => new Date(e2.date).getTime() - new Date(e1.date).getTime()
@@ -280,21 +199,16 @@ const mixOrdersAndReviews = (
     return events;
 };
 
-interface OrderProps {
-    record?: OrderRecord;
-    basePath?: string;
-}
-
-const Order: FC<OrderProps> = ({ record, basePath }) => {
+const Order = () => {
+    const record = useRecordContext();
     const translate = useTranslate();
-    return record ? (
+    if (!record) return null;
+    return (
         <>
             <Typography variant="body2" gutterBottom>
                 <Link to={`/commands/${record.id}`} component={RouterLink}>
-                    {translate('resources.commands.name', {
-                        smart_count: 1,
-                    })}{' '}
-                    #{record.reference}
+                    {translate('resources.commands.name', { smart_count: 1 })}
+                    &nbsp;#{record.reference}
                 </Link>
             </Typography>
             <Typography variant="body2" color="textSecondary">
@@ -305,42 +219,20 @@ const Order: FC<OrderProps> = ({ record, basePath }) => {
                 &nbsp;-&nbsp;
                 <NumberField
                     source="total"
-                    options={{
-                        style: 'currency',
-                        currency: 'USD',
-                    }}
-                    record={record}
-                    basePath={basePath}
+                    options={{ style: 'currency', currency: 'USD' }}
                 />
                 &nbsp;-&nbsp;
-                <TextField
-                    source="status"
-                    record={record}
-                    basePath={basePath}
-                />
+                <TextField source="status" />
             </Typography>
         </>
-    ) : null;
+    );
 };
 
-interface ReviewProps {
-    record?: ReviewRecord;
-    basePath?: string;
-}
-
-const useReviewStyles = makeStyles({
-    clamp: {
-        display: '-webkit-box',
-        '-webkit-line-clamp': 3,
-        '-webkit-box-orient': 'vertical',
-        overflow: 'hidden',
-    },
-});
-
-const Review: FC<ReviewProps> = ({ record, basePath }) => {
-    const classes = useReviewStyles();
+const Review = () => {
+    const record = useRecordContext();
     const translate = useTranslate();
-    return record ? (
+    if (!record) return null;
+    return (
         <>
             <Typography variant="body2" gutterBottom>
                 <Link to={`/reviews/${record.id}`} component={RouterLink}>
@@ -349,8 +241,6 @@ const Review: FC<ReviewProps> = ({ record, basePath }) => {
                         source="product_id"
                         reference="products"
                         resource="reviews"
-                        record={record}
-                        basePath={basePath}
                         link={false}
                     >
                         <TextField source="reference" component="span" />
@@ -359,17 +249,22 @@ const Review: FC<ReviewProps> = ({ record, basePath }) => {
                 </Link>
             </Typography>
             <Typography variant="body2" color="textSecondary" gutterBottom>
-                <StarRatingField record={record} />
+                <StarRatingField />
             </Typography>
             <Typography
                 variant="body2"
                 color="textSecondary"
-                className={classes.clamp}
+                sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                }}
             >
                 {record.comment}
             </Typography>
         </>
-    ) : null;
+    );
 };
 
 export default Aside;

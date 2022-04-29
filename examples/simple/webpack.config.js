@@ -2,10 +2,14 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-    entry: './src/index.tsx',
+    mode: 'development',
+    entry: {
+        polyfills: './src/polyfills.ts',
+        index: './src/index.tsx',
+    },
     output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'bundle.js',
+        path: path.resolve(__dirname, './output'),
+        filename: '[id].bundle.js',
     },
     devtool: 'cheap-module-source-map',
     resolve: {
@@ -36,13 +40,10 @@ module.exports = {
         }),
     ],
     devServer: {
-        disableHostCheck: true,
         host: '127.0.0.1',
         port: 8080,
-        stats: {
-            children: false,
-            chunks: false,
-            modules: false,
-        },
+    },
+    stats: {
+        children: true,
     },
 };

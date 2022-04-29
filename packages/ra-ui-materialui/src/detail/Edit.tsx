@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { ReactElement } from 'react';
+import { ReactNode } from 'react';
 import PropTypes from 'prop-types';
 import {
     EditContextProvider,
     ResourceContextProvider,
     useCheckMinimumRequiredProps,
     useEditController,
+    RaRecord,
 } from 'ra-core';
 import { EditProps } from '../types';
 import { EditView } from './EditView';
@@ -24,10 +25,9 @@ import { EditView } from './EditView';
  * - actions
  * - aside
  * - component
- * - successMessage
  * - title
  * - mutationMode
- * - undoable (deprecated)
+ * - mutationOptions
  *
  * @example
  *
@@ -56,11 +56,11 @@ import { EditView } from './EditView';
  * );
  * export default App;
  */
-export const Edit = (
-    props: EditProps & { children: ReactElement }
-): ReactElement => {
+export const Edit = <RecordType extends RaRecord = any>(
+    props: EditProps<RecordType> & { children: ReactNode }
+) => {
     useCheckMinimumRequiredProps('Edit', ['children'], props);
-    const controllerProps = useEditController(props);
+    const controllerProps = useEditController<RecordType>(props);
     const body = (
         <EditContextProvider value={controllerProps}>
             <EditView {...props} {...controllerProps} />
@@ -80,19 +80,23 @@ Edit.propTypes = {
     actions: PropTypes.oneOfType([PropTypes.element, PropTypes.bool]),
     aside: PropTypes.element,
     children: PropTypes.node,
-    classes: PropTypes.object,
     className: PropTypes.string,
+    disableAuthentication: PropTypes.bool,
     hasCreate: PropTypes.bool,
     hasEdit: PropTypes.bool,
     hasShow: PropTypes.bool,
     hasList: PropTypes.bool,
-    id: PropTypes.any.isRequired,
+    id: PropTypes.any,
     mutationMode: PropTypes.oneOf(['pessimistic', 'optimistic', 'undoable']),
-    onSuccess: PropTypes.func,
-    onFailure: PropTypes.func,
+    mutationOptions: PropTypes.object,
+    queryOptions: PropTypes.object,
+    redirect: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.bool,
+        PropTypes.func,
+    ]),
     resource: PropTypes.string,
-    successMessage: PropTypes.string,
     title: PropTypes.node,
     transform: PropTypes.func,
-    undoable: PropTypes.bool,
+    sx: PropTypes.any,
 };

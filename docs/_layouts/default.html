@@ -65,12 +65,13 @@
                     <ul id="nav-mobile" class="right hide-on-med-and-down">
                         <li class="active">
                             <a
-                                href="https://marmelab.com/react-admin/Readme.html"
+                                href="https://marmelab.com/react-admin/Tutorial.html"
                                 >Documentation</a
                             >
                         </li>
                         <li>
-                            <a href="https://marmelab.com/react-admin/Demos.html"
+                            <a
+                                href="https://marmelab.com/react-admin/Demos.html"
                                 >Demos</a
                             >
                         </li>
@@ -147,7 +148,7 @@
                     .replace(/^-+/, '') // Trim - from start of text
                     .replace(/-+$/, ''); // Trim - from end of text
             }
-            document.addEventListener('DOMContentLoaded', function () {
+            function buildPageToC() {
                 M.Sidenav.init(document.querySelectorAll('.sidenav'));
                 // Initialize version selector
                 M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'));
@@ -164,6 +165,10 @@
                     collapseDepth: 2,
                     hasInnerContainers: true,
                 });
+            }
+            // build ToC on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                buildPageToC();
             });
         </script>
         <script
@@ -172,9 +177,10 @@
         ></script>
         <script type="text/javascript">
             docsearch({
-                apiKey: '32f254b1de6a25a96665d1229b6eb8f7',
-                indexName: 'marmelab-react-admin',
                 container: '#docsearch',
+                appId: 'QY9T9CVM2N',
+                indexName: 'marmelab-react-admin',
+                apiKey: '75332227370be3dc35777cee6244881a',
             });
         </script>
         <script

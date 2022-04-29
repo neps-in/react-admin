@@ -1,40 +1,19 @@
 import * as React from 'react';
-import { FC, useCallback, MouseEventHandler } from 'react';
+import { styled } from '@mui/material/styles';
+import { useCallback, MouseEventHandler } from 'react';
 import PropTypes, { ReactComponentLike } from 'prop-types';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Button from '@material-ui/core/Button';
-import { makeStyles } from '@material-ui/core/styles';
-import { fade } from '@material-ui/core/styles/colorManipulator';
-import ActionCheck from '@material-ui/icons/CheckCircle';
-import AlertError from '@material-ui/icons/ErrorOutline';
-import classnames from 'classnames';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';
+import ActionCheck from '@mui/icons-material/CheckCircle';
+import AlertError from '@mui/icons-material/ErrorOutline';
+import clsx from 'clsx';
 import { useTranslate } from 'ra-core';
-
-const useStyles = makeStyles(
-    theme => ({
-        confirmPrimary: {
-            color: theme.palette.primary.main,
-        },
-        confirmWarning: {
-            color: theme.palette.error.main,
-            '&:hover': {
-                backgroundColor: fade(theme.palette.error.main, 0.12),
-                // Reset on mouse devices
-                '@media (hover: none)': {
-                    backgroundColor: 'transparent',
-                },
-            },
-        },
-        iconPaddingStyle: {
-            paddingRight: '0.5em',
-        },
-    }),
-    { name: 'RaConfirm' }
-);
+import { SxProps } from '@mui/system';
 
 /**
  * Confirmation dialog
@@ -53,22 +32,24 @@ const useStyles = makeStyles(
  *     onClose={() => { // do something }}
  * />
  */
-const Confirm: FC<ConfirmProps> = props => {
+export const Confirm = (props: ConfirmProps) => {
     const {
-        isOpen,
+        className,
+        isOpen = false,
         loading,
         title,
         content,
-        confirm,
-        cancel,
-        confirmColor,
-        ConfirmIcon,
-        CancelIcon,
+        cancel = 'ra.action.cancel',
+        confirm = 'ra.action.confirm',
+        confirmColor = 'primary',
+        ConfirmIcon = ActionCheck,
+        CancelIcon = AlertError,
         onClose,
         onConfirm,
         translateOptions = {},
+        sx,
     } = props;
-    const classes = useStyles(props);
+
     const translate = useTranslate();
 
     const handleConfirm = useCallback(
@@ -84,11 +65,13 @@ const Confirm: FC<ConfirmProps> = props => {
     }, []);
 
     return (
-        <Dialog
+        <StyledDialog
+            className={className}
             open={isOpen}
             onClose={onClose}
             onClick={handleClick}
             aria-labelledby="alert-dialog-title"
+            sx={sx}
         >
             <DialogTitle id="alert-dialog-title">
                 {translate(title, { _: title, ...translateOptions })}
@@ -107,29 +90,31 @@ const Confirm: FC<ConfirmProps> = props => {
             </DialogContent>
             <DialogActions>
                 <Button disabled={loading} onClick={onClose}>
-                    <CancelIcon className={classes.iconPaddingStyle} />
+                    <CancelIcon className={ConfirmClasses.iconPaddingStyle} />
                     {translate(cancel, { _: cancel })}
                 </Button>
                 <Button
                     disabled={loading}
                     onClick={handleConfirm}
-                    className={classnames('ra-confirm', {
-                        [classes.confirmWarning]: confirmColor === 'warning',
-                        [classes.confirmPrimary]: confirmColor === 'primary',
+                    className={clsx('ra-confirm', {
+                        [ConfirmClasses.confirmWarning]:
+                            confirmColor === 'warning',
+                        [ConfirmClasses.confirmPrimary]:
+                            confirmColor === 'primary',
                     })}
                     autoFocus
                 >
-                    <ConfirmIcon className={classes.iconPaddingStyle} />
+                    <ConfirmIcon className={ConfirmClasses.iconPaddingStyle} />
                     {translate(confirm, { _: confirm })}
                 </Button>
             </DialogActions>
-        </Dialog>
+        </StyledDialog>
     );
 };
 
 export interface ConfirmProps {
     cancel?: string;
-    classes?: object;
+    className?: string;
     confirm?: string;
     confirmColor?: string;
     ConfirmIcon?: ReactComponentLike;
@@ -141,11 +126,12 @@ export interface ConfirmProps {
     onConfirm: MouseEventHandler;
     title: string;
     translateOptions?: object;
+    sx?: SxProps;
 }
 
 Confirm.propTypes = {
     cancel: PropTypes.string,
-    classes: PropTypes.object,
+    className: PropTypes.string,
     confirm: PropTypes.string,
     confirmColor: PropTypes.string,
     ConfirmIcon: PropTypes.elementType,
@@ -156,16 +142,37 @@ Confirm.propTypes = {
     onClose: PropTypes.func.isRequired,
     onConfirm: PropTypes.func.isRequired,
     title: PropTypes.string.isRequired,
+    sx: PropTypes.any,
 };
 
-Confirm.defaultProps = {
-    cancel: 'ra.action.cancel',
-    classes: {},
-    confirm: 'ra.action.confirm',
-    confirmColor: 'primary',
-    ConfirmIcon: ActionCheck,
-    CancelIcon: AlertError,
-    isOpen: false,
+const PREFIX = 'RaConfirm';
+
+export const ConfirmClasses = {
+    confirmPrimary: `${PREFIX}-confirmPrimary`,
+    confirmWarning: `${PREFIX}-confirmWarning`,
+    iconPaddingStyle: `${PREFIX}-iconPaddingStyle`,
 };
 
-export default Confirm;
+const StyledDialog = styled(Dialog, {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme }) => ({
+    [`& .${ConfirmClasses.confirmPrimary}`]: {
+        color: theme.palette.primary.main,
+    },
+
+    [`& .${ConfirmClasses.confirmWarning}`]: {
+        color: theme.palette.error.main,
+        '&:hover': {
+            backgroundColor: alpha(theme.palette.error.main, 0.12),
+            // Reset on mouse devices
+            '@media (hover: none)': {
+                backgroundColor: 'transparent',
+            },
+        },
+    },
+
+    [`& .${ConfirmClasses.iconPaddingStyle}`]: {
+        paddingRight: '0.5em',
+    },
+}));

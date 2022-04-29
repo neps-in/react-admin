@@ -1,37 +1,17 @@
 import * as React from 'react';
-import { FC } from 'react';
-import {
-    Create,
-    FormTab,
-    NumberInput,
-    ReferenceInput,
-    SelectInput,
-    TabbedForm,
-    TextInput,
-    required,
-    CreateProps,
-} from 'react-admin';
-import { InputAdornment } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import RichTextInput from 'ra-input-rich-text';
+import { Create, FormTab, TabbedForm, TextInput, required } from 'react-admin';
+import { RichTextInput } from 'ra-input-rich-text';
 
-export const styles = {
-    price: { width: '7em' },
-    width: { width: '7em' },
-    height: { width: '7em' },
-    stock: { width: '7em' },
-    widthFormGroup: { display: 'inline-block' },
-    heightFormGroup: { display: 'inline-block', marginLeft: 32 },
-};
+import { ProductEditDetails } from './ProductEditDetails';
 
-const useStyles = makeStyles(styles);
-
-const ProductCreate: FC<CreateProps> = props => {
-    const classes = useStyles();
+const ProductCreate = () => {
     return (
-        <Create {...props}>
-            <TabbedForm>
-                <FormTab label="resources.products.tabs.image">
+        <Create>
+            <TabbedForm defaultValues={{ sales: 0 }}>
+                <FormTab
+                    label="resources.products.tabs.image"
+                    sx={{ maxWidth: '40em' }}
+                >
                     <TextInput
                         autoFocus
                         source="image"
@@ -44,58 +24,12 @@ const ProductCreate: FC<CreateProps> = props => {
                         validate={required()}
                     />
                 </FormTab>
-                <FormTab label="resources.products.tabs.details" path="details">
-                    <TextInput source="reference" validate={required()} />
-                    <NumberInput
-                        source="price"
-                        validate={required()}
-                        className={classes.price}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    €
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                    <NumberInput
-                        source="width"
-                        validate={required()}
-                        className={classes.width}
-                        formClassName={classes.widthFormGroup}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="start">
-                                    cm
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                    <NumberInput
-                        source="height"
-                        validate={required()}
-                        className={classes.height}
-                        formClassName={classes.heightFormGroup}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="start">
-                                    cm
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                    <ReferenceInput
-                        source="category_id"
-                        reference="categories"
-                        allowEmpty
-                    >
-                        <SelectInput source="name" />
-                    </ReferenceInput>
-                    <NumberInput
-                        source="stock"
-                        validate={required()}
-                        className={classes.stock}
-                    />
+                <FormTab
+                    label="resources.products.tabs.details"
+                    path="details"
+                    sx={{ maxWidth: '40em' }}
+                >
+                    <ProductEditDetails />
                 </FormTab>
                 <FormTab
                     label="resources.products.tabs.description"

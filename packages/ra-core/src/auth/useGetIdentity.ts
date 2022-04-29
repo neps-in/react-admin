@@ -13,21 +13,21 @@ const defaultIdentity = {
  *
  * The return value updates according to the call state:
  *
- * - mount: { loading: true, loaded: false }
- * - success: { identity: Identity, loading: false, loaded: true }
- * - error: { error: Error, loading: false, loaded: true }
+ * - mount: { isLoading: true }
+ * - success: { identity: Identity, isLoading: false }
+ * - error: { error: Error, isLoading: false }
  *
  * The implementation is left to the authProvider.
  *
- * @returns The current user identity. Destructure as { identity, error, loading, loaded }.
+ * @returns The current user identity. Destructure as { identity, error, isLoading }.
  *
  * @example
  *
  * import { useGetIdentity, useGetOne } from 'react-admin';
  *
  * const PostDetail = ({ id }) => {
- *     const { data: post, loading: postLoading } = useGetOne('posts', id);
- *     const { identity, loading: identityLoading } = useGetIdentity();
+ *     const { data: post, isLoading: postLoading } = useGetOne('posts', { id });
+ *     const { identity, isLoading: identityLoading } = useGetIdentity();
  *     if (postLoading || identityLoading) return <>Loading...</>;
  *     if (!post.lockedBy || post.lockedBy === identity.id) {
  *         // post isn't locked, or is locked by me
@@ -40,8 +40,7 @@ const defaultIdentity = {
  */
 const useGetIdentity = () => {
     const [state, setState] = useSafeSetState<State>({
-        loading: true,
-        loaded: false,
+        isLoading: true,
     });
     const authProvider = useAuthProvider();
     useEffect(() => {
@@ -50,25 +49,20 @@ const useGetIdentity = () => {
                 try {
                     const identity = await authProvider.getIdentity();
                     setState({
-                        loading: false,
-                        loaded: true,
+                        isLoading: false,
                         identity: identity || defaultIdentity,
                     });
                 } catch (error) {
                     setState({
-                        loading: false,
-                        loaded: true,
+                        isLoading: false,
                         error,
                     });
                 }
             };
             callAuthProvider();
         } else {
-            // fallback for pre-3.9 authProviders, which had no getIdentity method
-            // FIXME to be removed for the next major
             setState({
-                loading: false,
-                loaded: true,
+                isLoading: false,
                 identity: defaultIdentity,
             });
         }
@@ -77,8 +71,7 @@ const useGetIdentity = () => {
 };
 
 interface State {
-    loading: boolean;
-    loaded: boolean;
+    isLoading: boolean;
     identity?: UserIdentity;
     error?: any;
 }

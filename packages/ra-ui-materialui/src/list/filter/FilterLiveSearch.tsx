@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { FC, ChangeEvent, memo, useMemo } from 'react';
-import { InputAdornment } from '@material-ui/core';
-import SearchIcon from '@material-ui/icons/Search';
-import { Form } from 'react-final-form';
-import { useTranslate, useListFilterContext } from 'ra-core';
+import { ChangeEvent, memo, useMemo } from 'react';
+import { InputAdornment } from '@mui/material';
+import { SxProps } from '@mui/system';
+import SearchIcon from '@mui/icons-material/Search';
+import { Form, useTranslate, useListFilterContext } from 'ra-core';
 
-import TextInput from '../../input/TextInput';
+import { TextInput } from '../../input';
 
 /**
  * Form and search input for doing a full-text search filter.
@@ -22,37 +22,44 @@ import TextInput from '../../input/TextInput';
  *     </Card>
  * );
  */
-const FilterLiveSearch: FC<{ source?: string }> = props => {
-    const { source = 'q', ...rest } = props;
-    const { filterValues, setFilters } = useListFilterContext();
-    const translate = useTranslate();
+export const FilterLiveSearch = memo(
+    (props: {
+        source?: string;
+        sx?: SxProps;
+        variant?: 'filled' | 'outlined';
+    }) => {
+        const { source = 'q', variant = 'filled', ...rest } = props;
+        const { filterValues, setFilters } = useListFilterContext();
+        const translate = useTranslate();
 
-    const onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-        if (event.target) {
-            setFilters({ ...filterValues, [source]: event.target.value }, null);
-        } else {
-            const { [source]: _, ...filters } = filterValues;
-            setFilters(filters, null);
-        }
-    };
+        const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+            if (event.target) {
+                setFilters(
+                    { ...filterValues, [source]: event.target.value },
+                    null
+                );
+            } else {
+                const { [source]: _, ...filters } = filterValues;
+                setFilters(filters, null);
+            }
+        };
 
-    const initialValues = useMemo(
-        () => ({
-            [source]: filterValues[source],
-        }),
-        [filterValues, source]
-    );
+        const initialValues = useMemo(
+            () => ({
+                [source]: filterValues[source],
+            }),
+            [filterValues, source]
+        );
 
-    const onSubmit = () => undefined;
+        const onSubmit = () => undefined;
+        let label = translate('ra.action.search');
 
-    return (
-        <Form initialValues={initialValues} onSubmit={onSubmit}>
-            {() => (
+        return (
+            <Form defaultValues={initialValues} onSubmit={onSubmit}>
                 <TextInput
                     resettable
                     helperText={false}
                     source={source}
-                    label={translate('ra.action.search')}
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
@@ -60,12 +67,18 @@ const FilterLiveSearch: FC<{ source?: string }> = props => {
                             </InputAdornment>
                         ),
                     }}
-                    onChange={onSearchChange}
+                    onChange={handleChange}
+                    size="small"
+                    {...(variant === 'outlined'
+                        ? { variant: 'outlined', label }
+                        : {
+                              placeholder: label,
+                              label: false,
+                              hiddenLabel: true,
+                          })}
                     {...rest}
                 />
-            )}
-        </Form>
-    );
-};
-
-export default memo(FilterLiveSearch);
+            </Form>
+        );
+    }
+);

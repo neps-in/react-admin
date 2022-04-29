@@ -1,49 +1,48 @@
 import * as React from 'react';
-import { FC } from 'react';
 import {
     List,
-    ListProps,
     Datagrid,
     TextField,
     DateField,
     ReferenceField,
     NumberField,
-    Filter,
-    FilterProps,
     DateInput,
 } from 'react-admin';
-import { makeStyles } from '@material-ui/core/styles';
 
 import FullNameField from '../visitors/FullNameField';
 import AddressField from '../visitors/AddressField';
 import InvoiceShow from './InvoiceShow';
 
-const ListFilters = (props: Omit<FilterProps, 'children'>) => (
-    <Filter {...props}>
-        <DateInput source="date_gte" alwaysOn />
-        <DateInput source="date_lte" alwaysOn />
-    </Filter>
-);
+const listFilters = [
+    <DateInput source="date_gte" alwaysOn />,
+    <DateInput source="date_lte" alwaysOn />,
+];
 
-const useStyles = makeStyles(theme => ({
-    hiddenOnSmallScreens: {
-        display: 'table-cell',
-        [theme.breakpoints.down('md')]: {
-            display: 'none',
-        },
-    },
-}));
-
-const InvoiceList: FC<ListProps> = props => {
-    const classes = useStyles();
+const InvoiceList = () => {
     return (
         <List
-            {...props}
-            filters={<ListFilters />}
+            filters={listFilters}
             perPage={25}
             sort={{ field: 'date', order: 'desc' }}
         >
-            <Datagrid rowClick="expand" expand={<InvoiceShow />}>
+            <Datagrid
+                rowClick="expand"
+                expand={<InvoiceShow />}
+                sx={{
+                    '& .column-customer_id': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                    '& .column-total_ex_taxes': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                    '& .column-delivery_fees': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                    '& .column-taxes': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                }}
+            >
                 <TextField source="id" />
                 <DateField source="date" />
                 <ReferenceField source="customer_id" reference="customers">
@@ -54,8 +53,6 @@ const InvoiceList: FC<ListProps> = props => {
                     reference="customers"
                     link={false}
                     label="resources.invoices.fields.address"
-                    cellClassName={classes.hiddenOnSmallScreens}
-                    headerClassName={classes.hiddenOnSmallScreens}
                 >
                     <AddressField />
                 </ReferenceField>

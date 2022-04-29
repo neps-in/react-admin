@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { FC, ReactElement, ReactNode, HtmlHTMLAttributes } from 'react';
+import { ReactElement, ReactNode } from 'react';
 import PropTypes from 'prop-types';
-import { FormWithRedirect, FormWithRedirectProps, MutationMode } from 'ra-core';
-import { SimpleFormView } from './SimpleFormView';
+import { Form, FormProps } from 'ra-core';
+import { Stack, CardContent, SxProps, StackProps } from '@mui/material';
+import { Toolbar } from './Toolbar';
 
 /**
  * Form with a one column layout, one input per line.
@@ -28,28 +29,37 @@ import { SimpleFormView } from './SimpleFormView';
  *
  * @typedef {Object} Props the props you can use (other props are injected by Create or Edit)
  * @prop {ReactElement[]} children Input elements
- * @prop {Object} initialValues
+ * @prop {Object} defaultValues
  * @prop {Function} validate
- * @prop {boolean} submitOnEnter
  * @prop {string} redirect
  * @prop {ReactElement} toolbar The element displayed at the bottom of the form, containing the SaveButton
- * @prop {string} variant Apply variant to all inputs. Possible values are 'standard', 'outlined', and 'filled' (default)
- * @prop {string} margin Apply variant to all inputs. Possible values are 'none', 'normal', and 'dense' (default)
- * @prop {boolean} sanitizeEmptyValues Whether or not deleted record attributes should be recreated with a `null` value (default: true)
  *
  * @param {Props} props
  */
-const SimpleForm: FC<SimpleFormProps> = props => (
-    <FormWithRedirect
-        {...props}
-        render={formProps => <SimpleFormView {...formProps} />}
-    />
-);
+export const SimpleForm = (props: SimpleFormProps) => {
+    const {
+        children,
+        className,
+        component: Component = DefaultComponent,
+        sx,
+        toolbar = DefaultToolbar,
+        ...rest
+    } = props;
+    return (
+        <Form {...rest}>
+            <Component className={className} sx={sx}>
+                <Stack alignItems="flex-start" {...sanitizeRestProps(props)}>
+                    {children}
+                </Stack>
+            </Component>
+            {toolbar}
+        </Form>
+    );
+};
 
 SimpleForm.propTypes = {
     children: PropTypes.node,
-    initialValues: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
-    mutationMode: PropTypes.oneOf(['pessimistic', 'optimistic', 'undoable']),
+    defaultValues: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
     // @ts-ignore
     record: PropTypes.object,
     redirect: PropTypes.oneOfType([
@@ -57,35 +67,41 @@ SimpleForm.propTypes = {
         PropTypes.bool,
         PropTypes.func,
     ]),
-    save: PropTypes.func,
-    saving: PropTypes.bool,
-    submitOnEnter: PropTypes.bool,
-    toolbar: PropTypes.element,
-    undoable: PropTypes.bool,
+    toolbar: PropTypes.oneOfType([PropTypes.element, PropTypes.oneOf([false])]),
     validate: PropTypes.func,
-    version: PropTypes.number,
-    sanitizeEmptyValues: PropTypes.bool,
 };
 
 export interface SimpleFormProps
-    extends Omit<FormWithRedirectProps, 'render'>,
-        Omit<
-            HtmlHTMLAttributes<HTMLFormElement>,
-            'defaultValue' | 'onSubmit' | 'children'
-        > {
-    basePath?: string;
+    extends Omit<FormProps, 'render'>,
+        Omit<StackProps, 'onSubmit'> {
     children: ReactNode;
     className?: string;
     component?: React.ComponentType<any>;
-    initialValues?: any;
-    margin?: 'none' | 'normal' | 'dense';
-    mutationMode?: MutationMode;
-    resource?: string;
-    submitOnEnter?: boolean;
-    toolbar?: ReactElement;
-    /** @deprecated use mutationMode: undoable instead */
-    undoable?: boolean;
-    variant?: 'standard' | 'outlined' | 'filled';
+    defaultValues?: any;
+    toolbar?: ReactElement | false;
+    sx?: SxProps;
 }
 
-export default SimpleForm;
+const DefaultComponent = ({ children, sx, className }) => (
+    <CardContent sx={sx} className={className}>
+        {children}
+    </CardContent>
+);
+const DefaultToolbar = <Toolbar />;
+
+const sanitizeRestProps = ({
+    children,
+    className,
+    component,
+    defaultValues,
+    onSubmit,
+    record,
+    resource,
+    reValidateMode,
+    sx,
+    toolbar,
+    validate,
+    resolver,
+    warnWhenUnsavedChanges,
+    ...props
+}: SimpleFormProps) => props;

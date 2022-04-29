@@ -1,28 +1,22 @@
 import * as React from 'react';
-import { FC } from 'react';
-import Card from '@material-ui/core/Card';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import { makeStyles } from '@material-ui/core/styles';
+import {
+    Card,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+} from '@mui/material';
 import { useTranslate, Title } from 'react-admin';
 
 import LinkToRelatedCustomers from './LinkToRelatedCustomers';
 import segments from './data';
 
-const useStyles = makeStyles({
-    root: {
-        marginTop: 16,
-    },
-});
-
-const Segments: FC = () => {
+const Segments = () => {
     const translate = useTranslate();
-    const classes = useStyles();
+
     return (
-        <Card className={classes.root}>
+        <Card sx={{ mt: 8 }}>
             <Title
                 title={translate('resources.segments.name', { smart_count: 2 })}
             />

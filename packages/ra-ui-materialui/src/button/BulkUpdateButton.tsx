@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { FC } from 'react';
 import PropTypes from 'prop-types';
-import BulkUpdateWithConfirmButton, {
+import {
+    BulkUpdateWithConfirmButton,
     BulkUpdateWithConfirmButtonProps,
 } from './BulkUpdateWithConfirmButton';
-import BulkUpdateWithUndoButton, {
+import {
+    BulkUpdateWithUndoButton,
     BulkUpdateWithUndoButtonProps,
 } from './BulkUpdateWithUndoButton';
 import { MutationMode } from 'ra-core';
@@ -19,10 +20,10 @@ import { MutationMode } from 'ra-core';
  * import { Fragment } from 'react';
  * import { BulkUpdateButton, BulkExportButton } from 'react-admin';
  *
- * const PostBulkActionButtons = ({ basePath }) => (
+ * const PostBulkActionButtons = () => (
  *     <Fragment>
  *         <BulkExportButton />
- *         <BulkUpdateButton label="Reset Views" data={{ views: 0 }} basePath={basePath} />
+ *         <BulkUpdateButton label="Reset Views" data={{ views: 0 }} />
  *     </Fragment>
  * );
  *
@@ -32,15 +33,15 @@ import { MutationMode } from 'ra-core';
  *     </List>
  * );
  */
-const BulkUpdateButton: FC<BulkUpdateButtonProps> = ({
-    mutationMode,
-    ...props
-}) =>
-    mutationMode === 'undoable' ? (
-        <BulkUpdateWithUndoButton {...props} />
+export const BulkUpdateButton = (props: BulkUpdateButtonProps) => {
+    const { mutationMode, ...rest } = props;
+
+    return mutationMode === 'undoable' ? (
+        <BulkUpdateWithUndoButton {...rest} />
     ) : (
-        <BulkUpdateWithConfirmButton mutationMode={mutationMode} {...props} />
+        <BulkUpdateWithConfirmButton mutationMode={mutationMode} {...rest} />
     );
+};
 
 interface Props {
     mutationMode?: MutationMode;
@@ -50,7 +51,6 @@ export type BulkUpdateButtonProps = Props &
     (BulkUpdateWithUndoButtonProps | BulkUpdateWithConfirmButtonProps);
 
 BulkUpdateButton.propTypes = {
-    basePath: PropTypes.string,
     label: PropTypes.string,
     resource: PropTypes.string,
     selectedIds: PropTypes.arrayOf(PropTypes.any),
@@ -62,5 +62,3 @@ BulkUpdateButton.defaultProps = {
     mutationMode: 'undoable',
     data: [],
 };
-
-export default BulkUpdateButton;
